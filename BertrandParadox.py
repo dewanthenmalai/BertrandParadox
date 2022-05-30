@@ -17,9 +17,13 @@ for i in range(3):
     axs[i].set_xlim([-1.1, 1.1])
     axs[i].set_ylim([-1.1, 1.1])
 
+axs[2].plot(0.5*np.cos(t), 0.5*np.sin(t), 'k')
+
+radius2, = axs[1].plot([], [], 'r')
+triangle1, = axs[0].plot([], [], 'k')
+triangle2, = axs[1].plot([], [], 'k')
 line1, = axs[0].plot([], [], 'g')
 line2, = axs[1].plot([], [], 'g')
-radius2, = axs[1].plot([], [], 'r')
 line3, = axs[2].plot([], [], 'g')
 points1, = axs[0].plot([], [], 'm.')
 points2, = axs[1].plot([], [], 'm.')
@@ -50,31 +54,48 @@ def MethodThreeGet():
         point = generator.uniform(0, 1, 2)
     return point
 
-def MethodOnePlot(line, points):
-    xdata = [np.cos(points[0]), np.cos(points[1])]
-    ydata = [np.sin(points[0]), np.sin(points[1])]
+def MethodOnePlot(line, plotpoints, triangle, points):
+    point1 = [np.cos(points[0]), np.sin(points[0])]
+    point2 = [np.cos(points[1]), np.sin(points[1])]
+    xdata = [point1[0], point2[0]]
+    ydata = [point1[1], point2[1]]
+    
+    trianglex = [np.cos(points[0]-2*np.pi/3), point1[0], np.cos(points[0]+2*np.pi/3), np.cos(points[0]-2*np.pi/3)]
+    triangley = [np.sin(points[0]-2*np.pi/3), point1[1], np.sin(points[0]+2*np.pi/3), np.sin(points[0]-2*np.pi/3)]
     
     line.set_data(xdata, ydata)
+    plotpoints.set_data(xdata, ydata)
+    triangle.set_data(trianglex, triangley)
     return line
 
-def MethodTwoPlot(radius, line, angle, dist):
+def MethodTwoPlot(radius, line, plotpoints, triangle, angle, dist):
     radiuspoint = [dist*np.cos(angle), dist*np.sin(angle)]
+    triangleradiuspoint = [0.5*np.cos(angle), 0.5*np.sin(angle)]
     chordlength = np.sqrt(1 - np.square(dist))
+    trianglelength = np.sqrt(1 - np.square(0.5))
     dir1 = angle + np.pi/2
     dir2 = angle - np.pi/2
     point1 = [radiuspoint[0]+chordlength*np.cos(dir1), radiuspoint[1]+chordlength*np.sin(dir1)]
     point2 = [radiuspoint[0]+chordlength*np.cos(dir2), radiuspoint[1]+chordlength*np.sin(dir2)]
+    trianglepoint1 = [triangleradiuspoint[0]+trianglelength*np.cos(dir1), triangleradiuspoint[1]+trianglelength*np.sin(dir1)]
+    trianglepoint2 = [triangleradiuspoint[0]+trianglelength*np.cos(dir2), triangleradiuspoint[1]+trianglelength*np.sin(dir2)]
     
     radiusx = [0, np.cos(angle)]
     radiusy = [0, np.sin(angle)]
-    xdata = [point1[0], radiuspoint[0], point2[0]]
-    ydata = [point1[1], radiuspoint[1], point2[1]]
+    xdata = [point1[0], point2[0]]
+    ydata = [point1[1], point2[1]]
+    pointx = [radiuspoint[0]]
+    pointy = [radiuspoint[1]]
+    trianglex = [trianglepoint1[0], trianglepoint2[0]]
+    triangley = [trianglepoint1[1], trianglepoint2[1]]
     
+    plotpoints.set_data(pointx, pointy)
     radius.set_data(radiusx, radiusy)
     line.set_data(xdata, ydata)
+    triangle.set_data(trianglex, triangley)
     return radius, line
 
-def MethodThreePlot(line, point):
+def MethodThreePlot(line, plotpoints, point):
     angle = 0
     if point[0] == 0 and point[1] >= 0:
         angle = np.pi/2
@@ -82,6 +103,7 @@ def MethodThreePlot(line, point):
         angle = 3*np.pi/2
     else:
         angle = np.arctan(point[1]/point[0])
+    
     dist = np.linalg.norm(point)
     chordlength = np.sqrt(1 - np.square(dist))
     dir1 = angle + np.pi/2
@@ -89,16 +111,14 @@ def MethodThreePlot(line, point):
     point1 = [point[0]+chordlength*np.cos(dir1), point[1]+chordlength*np.sin(dir1)]
     point2 = [point[0]+chordlength*np.cos(dir2), point[1]+chordlength*np.sin(dir2)]
     
-    xdata = [point1[0], point[0], point2[0]]
-    ydata = [point1[1], point[1], point2[1]]
+    xdata = [point1[0], point2[0]]
+    ydata = [point1[1], point2[1]]
+    pointx = [point[0]]
+    pointy = [point[1]]
     
+    plotpoints.set_data(pointx, pointy)
     line.set_data(xdata, ydata)
     return line
-
-def PlotPoints(line1, line2, line3):
-    points1.set_data(line1.get_xdata(), line1.get_ydata())
-    points2.set_data(line2.get_xdata(), line2.get_ydata())
-    points3.set_data(line3.get_xdata(), line3.get_ydata())
 
 def UpdateSuccess(data1, data2, data3):
     global trials
@@ -126,14 +146,13 @@ def animate(i):
     method2angle, method2dist = MethodTwoGet()
     method3point = MethodThreeGet()
     
-    MethodOnePlot(line1, method1points)
-    MethodTwoPlot(radius2, line2, method2angle, method2dist)
-    MethodThreePlot(line3, method3point)
-    PlotPoints(line1, line2, line3)
+    MethodOnePlot(line1, points1, triangle1, method1points)
+    MethodTwoPlot(radius2, line2, points2, triangle2, method2angle, method2dist)
+    MethodThreePlot(line3, points3, method3point)
     UpdateSuccess(method1points, method2dist, method3point)
     
     return
 
-anim = animation.FuncAnimation(fig, animate, interval=500)
+anim = animation.FuncAnimation(fig, animate, interval=1000)
 plt.tight_layout()
 plt.show()
